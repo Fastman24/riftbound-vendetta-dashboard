@@ -203,7 +203,7 @@ html = f"""<meta charset="utf-8">
   html, body {{ margin: 0; padding: 0; background: var(--page); min-height: 100%; }}
   body {{ font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text-primary); }}
 
-  .viz-root {{ padding: 32px 20px 48px; max-width: 900px; margin: 0 auto; background: var(--page); }}
+  .viz-root {{ padding: 32px 20px 48px; max-width: 1080px; margin: 0 auto; background: var(--page); }}
   .viz-root * {{ box-sizing: border-box; }}
   .viz-root ::selection {{ background: color-mix(in oklab, var(--div-blue) 35%, transparent); }}
   .viz-h1 {{ font-size: 24px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.01em; }}
@@ -273,7 +273,7 @@ html = f"""<meta charset="utf-8">
   .picker-btn.active {{ background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); font-weight: 600; }}
 
   .rosco-wrap {{ display: flex; flex-direction: column; align-items: center; }}
-  .rosco-wrap svg {{ width: 100%; max-width: 760px; height: auto; }}
+  .rosco-wrap svg {{ width: 100%; max-width: 980px; height: auto; }}
   .rosco-node circle {{ cursor: pointer; transition: filter .12s ease; stroke: var(--surface-1); stroke-width: 2; }}
   .rosco-node:hover circle {{ filter: brightness(1.12); }}
   .rosco-node.insufficient circle {{ fill: var(--gridline) !important; stroke: var(--baseline); stroke-dasharray: 2 2; }}
