@@ -51,16 +51,23 @@ total_decks = sum(l["times_played"] for l in legends)
 total_games = sum(l["total_games"] or 0 for l in legends)
 max_played = max(l["times_played"] for l in legends)
 
-# Estimated mirror-match rate per legend: P(opponent also pilots this legend) ~= its
-# share of the deck population (metashare) in these 4 tournaments. riftDecks never
-# publishes actual mirror-match results (its winrate matrix explicitly excludes
-# mirrors), so this is the best available estimate, not an observed count.
-mirror_share = {l["legend"]: l["times_played"] / total_decks for l in legends}
-
 # Picker order: legends that actually have matchup rows, sorted by times_played desc.
 played_rank = {l["legend"]: l["times_played"] for l in legends}
 picker_legends = sorted((n for n in legend_order if n in matchups.get("general_any", {})),
                          key=lambda n: -played_rank.get(n, 0))
+
+# Individual-tournament matchup scopes, matched to scrape_matchups.py's SCOPES
+# by riftDecks event id. Order matches tournaments_200plus.json (players desc).
+TOURNAMENT_SCOPE_BY_NAME = {
+    "Riftbound Showdown Series Germany - Speyer": ("germany", "Alemania (Speyer)"),
+    "Riftbound Showdown Ottawa": ("ottawa", "Ottawa"),
+    "10K Showdown - Auckland Card Show": ("auckland", "Auckland"),
+    "RiftAtlas Convergence #2": ("riftatlas", "RiftAtlas"),
+}
+tournament_scopes = [
+    {"key": TOURNAMENT_SCOPE_BY_NAME[t["name"]][0], "label": f'{TOURNAMENT_SCOPE_BY_NAME[t["name"]][1]} ({t["players"]:,}p)'}
+    for t in tournaments if t["name"] in TOURNAMENT_SCOPE_BY_NAME
+]
 
 # ---- Barcelona 2026 projection: pure math, no reused-tournament proxy ----
 # Population estimate = ALL Vendetta tournaments, any size, all time (the
@@ -141,7 +148,11 @@ max_share_pct = max(r["share_pct"] for r in barcelona_rows)
 html = f"""<meta charset="utf-8">
 <title>Riftbound Vendetta — Legends en torneos 200+ jugadores</title>
 <style>
-  .viz-root {{
+  /* Tokens live on :root (not .viz-root) so html/body can use them too --
+     this page is served standalone by GitHub Pages (no wrapping skeleton),
+     so without this, the default white/UA body background showed through
+     as a visible band around .viz-root's centered, page-colored content. */
+  :root {{
     color-scheme: light;
     --surface-1: #fcfcfb;
     --page: #f9f9f7;
@@ -155,12 +166,9 @@ html = f"""<meta charset="utf-8">
     --div-red: #e34948;
     --div-mid: #898781;
     --chip-bg: #f0efec;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--page);
-    color: var(--text-primary);
   }}
   @media (prefers-color-scheme: dark) {{
-    :root:where(:not([data-theme="light"])) .viz-root {{
+    :root:where(:not([data-theme="light"])) {{
       color-scheme: dark;
       --surface-1: #1a1a19;
       --page: #0d0d0d;
@@ -176,7 +184,7 @@ html = f"""<meta charset="utf-8">
       --chip-bg: #24231f;
     }}
   }}
-  :root[data-theme="dark"] .viz-root {{
+  :root[data-theme="dark"] {{
     color-scheme: dark;
     --surface-1: #1a1a19;
     --page: #0d0d0d;
@@ -192,7 +200,10 @@ html = f"""<meta charset="utf-8">
     --chip-bg: #24231f;
   }}
 
-  .viz-root {{ padding: 32px 20px 48px; max-width: 900px; margin: 0 auto; }}
+  html, body {{ margin: 0; padding: 0; background: var(--page); min-height: 100%; }}
+  body {{ font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text-primary); }}
+
+  .viz-root {{ padding: 32px 20px 48px; max-width: 900px; margin: 0 auto; background: var(--page); }}
   .viz-root * {{ box-sizing: border-box; }}
   .viz-root ::selection {{ background: color-mix(in oklab, var(--div-blue) 35%, transparent); }}
   .viz-h1 {{ font-size: 24px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.01em; }}
@@ -273,18 +284,6 @@ html = f"""<meta charset="utf-8">
   .rosco-center circle {{ fill: var(--text-primary); }}
   .rosco-center text {{ fill: var(--surface-1); font-weight: 650; }}
   .rosco-spoke {{ stroke: var(--gridline); stroke-width: 1; }}
-
-  .freq-row {{ display: grid; grid-template-columns: 110px 1fr 130px; align-items: center; gap: 10px; height: 22px; margin-bottom: 3px; }}
-  .freq-row .name {{ font-size: 12px; color: var(--text-secondary); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-  .freq-row .track {{ position: relative; height: 14px; background: var(--gridline); border-radius: 4px; overflow: visible; }}
-  .freq-row .fill {{ position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }}
-  .freq-row .whisker-line {{ position: absolute; top: 50%; height: 2px; background: var(--text-primary); opacity: .55; transform: translateY(-50%); }}
-  .freq-row .whisker-tick {{ position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text-primary); opacity: .7; }}
-  .freq-row .tail {{ font-size: 11px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }}
-  .freq-row .tail b {{ color: var(--text-primary); }}
-  .freq-row .tail .ci {{ color: var(--text-muted); }}
-  .freq-row.mirror .name {{ font-weight: 650; font-style: italic; }}
-  .freq-row.mirror .track {{ outline: 1px dashed var(--baseline); outline-offset: 1px; }}
 
   .freq-table-wrap {{ overflow-x: auto; }}
   table.freqtable {{ width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 640px; }}
@@ -462,16 +461,24 @@ html = f"""<meta charset="utf-8">
     <h2>Matchups — win rate de una leyenda contra cada otra</h2>
     <p class="viz-sub" style="margin-bottom:14px;">
       Elige una leyenda para ver su "rosco" de matchups: cada nodo alrededor es un rival, coloreado
-      por win rate (mismo azul/rojo divergente centrado en 50%). La fuente no ofrece un corte exacto
-      "Top 64" / "Top 8" — solo porcentajes relativos al tamaño de cada torneo, así que usamos Top 25%
-      y Top 10% de cada evento como la aproximación más cercana disponible.
+      por win rate (mismo azul/rojo divergente centrado en 50%). Filtra por torneo individual o mira
+      los 4 combinados ("General"), y dentro de cada uno por nivel de jugadores — la fuente no ofrece
+      un corte exacto "Top 64" / "Top 8", solo porcentajes relativos al tamaño de cada torneo, así que
+      Top 25% y Top 10% son la aproximación más cercana disponible.
     </p>
+
+    <div class="toggle-row" id="tournamentToggle">
+      <button class="toggle-btn active" data-scope="general">General (4 torneos)</button>
+      {"".join(f'<button class="toggle-btn" data-scope="{s["key"]}">{s["label"]}</button>' for s in tournament_scopes)}
+    </div>
 
     <div class="toggle-row" id="tierToggle">
       <button class="toggle-btn active" data-tier="any">Todos los jugadores</button>
       <button class="toggle-btn" data-tier="top25">Top 25% por torneo</button>
       <button class="toggle-btn" data-tier="top10">Top 10% por torneo (≈ Top 64)</button>
     </div>
+
+    <div class="foot" id="matchupCoverage" style="margin-bottom:14px;"></div>
 
     <div class="picker" id="legendPicker"></div>
 
@@ -488,25 +495,6 @@ html = f"""<meta charset="utf-8">
     </div>
 
     <div class="foot" id="roscoFoot"></div>
-
-    <h2 style="margin-top:22px;">¿Contra qué te vas a encontrar? — rival esperado por estadística</h2>
-    <p class="viz-sub" style="margin-bottom:14px;">
-      Ranking de rivales por frecuencia real observada cuando pilotas la leyenda elegida (en la pestaña
-      y nivel seleccionados arriba), incluyendo el <b>espejo</b> (misma leyenda enfrente). Para que la
-      muestra pequeña no engañe, el orden usa el <b>límite inferior del intervalo de confianza de Wilson
-      al 95%</b> sobre esa frecuencia — así un rival con solo 3 partidas y un 40% de aparición no se cuela
-      por encima de uno con 200 partidas y un 30% real. La barra marca la estimación puntual; la línea
-      marca el intervalo completo (95%) de dónde podría estar el valor real.
-      <br><br>
-      <b>Sobre el espejo:</b> riftDecks no publica partidas de espejo (su matriz de win rate las excluye
-      explícitamente), así que no hay un conteo real que usar. Se estima como la cuota de metagame de esa
-      leyenda entre los mazos de la población de referencia de la pestaña activa (a más popular, más
-      probable que el rival lleve lo mismo), y el resto de rivales se reescala proporcionalmente para que
-      todas las probabilidades sumen 100%. Se muestra con un marcador distinto porque su origen es una
-      estimación, no una cuenta directa de partidas. Todo esto asume emparejamientos aproximadamente
-      aleatorios, lo cual es razonable pero no exacto bajo Swiss real.
-    </p>
-    <div id="freqList"></div>
   </div>
 </div>
 
@@ -583,9 +571,6 @@ html = f"""<meta charset="utf-8">
   const matchups = {json.dumps(matchups, ensure_ascii=False)};
   const legendOrder = {json.dumps(legend_order, ensure_ascii=False)};
   const pickerLegends = {json.dumps(picker_legends, ensure_ascii=False)};
-  const mirrorShare = {json.dumps(mirror_share, ensure_ascii=False)};
-  const timesPlayedByLegend = {json.dumps({l["legend"]: l["times_played"] for l in legends}, ensure_ascii=False)};
-  const totalDecksAll = {total_decks};
 
   // Plain first-name is ambiguous when two legends share it (e.g. the two
   // Master Yi variants) -- disambiguate only those with their epithet.
@@ -608,12 +593,15 @@ html = f"""<meta charset="utf-8">
   const svg = document.getElementById('roscoSvg');
   const roscoFoot = document.getElementById('roscoFoot');
   const tierToggle = document.getElementById('tierToggle');
+  const tournamentToggle = document.getElementById('tournamentToggle');
+  const matchupCoverage = document.getElementById('matchupCoverage');
 
   let currentTier = 'any';
+  let currentScope = 'general';
   let currentPilot = pickerLegends[0];
 
   function currentScenarioKey() {{
-    return 'general_' + currentTier;
+    return currentScope + '_' + currentTier;
   }}
 
   picker.innerHTML = pickerLegends.map(n =>
@@ -698,83 +686,13 @@ html = f"""<meta charset="utf-8">
       'Pasa el ratón sobre un nodo para ver partidas exactas.';
   }}
 
-  // Wilson score interval (95%) for a proportion k/n.
-  function wilson(k, n) {{
-    const z = 1.96;
-    if (!n) return {{p: 0, lo: 0, hi: 0}};
-    const phat = k / n;
-    const denom = 1 + (z * z) / n;
-    const center = (phat + (z * z) / (2 * n)) / denom;
-    const margin = (z * Math.sqrt((phat * (1 - phat) + (z * z) / (4 * n)) / n)) / denom;
-    return {{p: phat, lo: Math.max(0, center - margin), hi: Math.min(1, center + margin)}};
-  }}
-
-  const freqList = document.getElementById('freqList');
-
-  function renderFreqList() {{
-    const opponents = legendOrder.filter(n => n !== currentPilot);
-    const tierData = (matchups[currentScenarioKey()] || {{}})[currentPilot] || {{}};
-    const total = opponents.reduce((s, o) => s + (tierData[o] ? tierData[o].matches : 0), 0);
-    const mShare = mirrorShare[currentPilot] || 0;
-
-    // Non-mirror opponents: Wilson CI on the conditional share (given it's not a
-    // mirror), then rescaled by (1 - mShare) so every row -- mirror included --
-    // lives on the same "probability of facing this next round" scale and the
-    // whole set sums to ~100%.
-    const oppRows = opponents
-      .map(o => {{
-        const d = tierData[o];
-        const k = d ? d.matches : 0;
-        const w = wilson(k, total);
-        return {{
-          label: shortName(o), n: k, isMirror: false,
-          p: w.p * (1 - mShare), lo: w.lo * (1 - mShare), hi: w.hi * (1 - mShare),
-        }};
-      }})
-      .filter(r => r.n > 0);
-
-    const rows = [...oppRows];
-    if (mShare > 0) {{
-      const kMirror = timesPlayedByLegend[currentPilot] || 0;
-      const wMirror = wilson(kMirror, totalDecksAll);
-      rows.push({{
-        label: shortName(currentPilot) + ' (espejo)', n: kMirror, isMirror: true,
-        p: wMirror.p, lo: wMirror.lo, hi: wMirror.hi,
-      }});
-    }}
-
-    rows.sort((a, b) => b.lo - a.lo); // rank by Wilson lower bound: penalizes small-sample noise
-
-    if (!rows.length || total === 0) {{
-      freqList.innerHTML = '<div class="foot">Sin partidas registradas para ' + shortName(currentPilot) + ' en este nivel.</div>';
-      return;
-    }}
-
-    const maxHi = Math.max(...rows.map(r => r.hi));
-
-    freqList.innerHTML = rows.map(r => {{
-      const pct = (r.p * 100).toFixed(1);
-      const loPct = (r.lo * 100).toFixed(1);
-      const hiPct = (r.hi * 100).toFixed(1);
-      const barPct = (r.p / maxHi * 100).toFixed(1);
-      const loBarPct = (r.lo / maxHi * 100).toFixed(1);
-      const hiBarPct = (r.hi / maxHi * 100).toFixed(1);
-      const barShare = Math.min(100, (r.p / maxHi * 100));
-      const fillColor = r.isMirror
-        ? 'color-mix(in oklab, var(--div-mid) ' + barShare.toFixed(0) + '%, var(--surface-1))'
-        : 'color-mix(in oklab, var(--div-blue) ' + barShare.toFixed(0) + '%, var(--surface-1))';
-      const nLabel = r.isMirror ? ('~' + r.n + ' mazos, estimado') : ('n=' + r.n);
-      return '<div class="freq-row' + (r.isMirror ? ' mirror' : '') + '">' +
-        '<div class="name">' + r.label + '</div>' +
-        '<div class="track">' +
-          '<div class="fill" style="width:' + barPct + '%; background:' + fillColor + '"></div>' +
-          '<div class="whisker-line" style="left:' + loBarPct + '%; width:' + (hiBarPct - loBarPct).toFixed(1) + '%"></div>' +
-          '<div class="whisker-tick" style="left:' + loBarPct + '%"></div>' +
-          '<div class="whisker-tick" style="left:' + hiBarPct + '%"></div>' +
-        '</div>' +
-        '<div class="tail"><b>' + pct + '%</b> <span class="ci">(' + loPct + '–' + hiPct + '%, ' + nLabel + ')</span></div>' +
-      '</div>';
-    }}).join('');
+  function updateCoverage() {{
+    const scopeLabel = tournamentToggle.querySelector('.toggle-btn.active').textContent;
+    const tierLabel = tierToggle.querySelector('.toggle-btn.active').textContent;
+    const matrix = matchups[currentScenarioKey()] || {{}};
+    const pilotCount = Object.keys(matrix).length;
+    matchupCoverage.textContent = scopeLabel + ' · ' + tierLabel + ': ' + pilotCount +
+      ' leyendas con muestra suficiente para matchups en este recorte.';
   }}
 
   picker.addEventListener('click', e => {{
@@ -783,7 +701,6 @@ html = f"""<meta charset="utf-8">
     currentPilot = btn.dataset.legend;
     picker.querySelectorAll('.picker-btn').forEach(b => b.classList.toggle('active', b === btn));
     renderRosco();
-    renderFreqList();
   }});
 
   tierToggle.addEventListener('click', e => {{
@@ -791,12 +708,21 @@ html = f"""<meta charset="utf-8">
     if (!btn) return;
     currentTier = btn.dataset.tier;
     tierToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    updateCoverage();
     renderRosco();
-    renderFreqList();
   }});
 
+  tournamentToggle.addEventListener('click', e => {{
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    currentScope = btn.dataset.scope;
+    tournamentToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+    updateCoverage();
+    renderRosco();
+  }});
+
+  updateCoverage();
   renderRosco();
-  renderFreqList();
 }})();
 </script>
 """

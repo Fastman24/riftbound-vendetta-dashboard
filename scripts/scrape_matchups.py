@@ -1,24 +1,34 @@
 """
 Scrapes the full legend-vs-legend matchup matrix (win rate + matches per pair)
-from riftDecks.com's Winrate Matrix page, for the 4 tournaments covered by
-scrape_tournament_breakdowns.py (minimum_players=256, the closest bucket to
-"more than 200 players"), across three player-slice tiers the site offers:
+from riftDecks.com's Winrate Matrix page, once for the combined "General"
+population (all 4 tournaments, minimum_players=256 -- the closest bucket to
+"more than 200 players") and once per INDIVIDUAL tournament (via the site's
+event_ids[] filter, discovered from the page's "Tournaments" multiselect
+field: /stats/winrate?...&event_ids[]=<id>). Each of those 5 scopes is
+scraped across three player-slice tiers:
 
-  - general_any:   top_percent="" (every player)
-  - general_top25: top_percent="25"
-  - general_top10: top_percent="10"
+  - any:   top_percent="" (every player)
+  - top25: top_percent="25"
+  - top10: top_percent="10"
 
 riftDecks does not expose an absolute "Top 64" / "Top 8" cut, only percentages
 relative to each tournament's own size, so top_percent=10/25 are the closest
 available approximation, flagged as such in the dashboard UI.
 
+Per-tournament event IDs were found via the lazy multiselect's backing
+endpoint, /stats/filter-events?metagame_id=4&minimum_players=256&format_id=1
+-- note that endpoint only listed 3 of the 4 tournaments (RiftAtlas
+Convergence #2 was missing), but querying event_ids[]=<its id> directly still
+returns real match data, so all 4 are included here regardless of whether
+that dropdown surfaces them.
+
 (An earlier version of this script also scraped "barcelona" and "nexusnight"
-proxy scenarios at minimum_players=512, reusing these same 2 tournaments as a
+proxy scenarios at minimum_players=512, reusing 2 of these tournaments as a
 stand-in for events that don't have real Vendetta data yet. Those were
 replaced by a proper statistical projection -- see generate_chart.py's
 Barcelona section -- and dropped here as they added no real signal.)
 
-Writes matchups.json: { scenario_key: { pilot_legend: { opponent_legend: {win_rate, matches} } } }
+Writes matchups.json: { "{scope}_{tier}": { pilot_legend: { opponent_legend: {win_rate, matches} } } }
 and legends_order.json: [legend names in the matrix's row/column order]
 """
 import json
@@ -38,20 +48,21 @@ HEADERS = {
 }
 OUT_DIR = Path(__file__).parent
 
-SCENARIOS = {
-    "general_any": {"minimum_players": "256", "top_percent": ""},
-    "general_top25": {"minimum_players": "256", "top_percent": "25"},
-    "general_top10": {"minimum_players": "256", "top_percent": "10"},
+TIERS = {"any": "", "top25": "25", "top10": "10"}
+
+# scope_key -> extra query params identifying the population (on top of
+# metagame_id=4 + top_percent, added in fetch_matrix).
+SCOPES = {
+    "general": {"minimum_players": "256"},
+    "germany": {"event_ids[]": "13992"},
+    "ottawa": {"event_ids[]": "13733"},
+    "auckland": {"event_ids[]": "13965"},
+    "riftatlas": {"event_ids[]": "13986"},
 }
 
 
-def fetch_matrix(minimum_players: str, top_percent: str):
-    params = {
-        "metagame_id": "4",
-        "minimum_players": minimum_players,
-        "date_range": "all",
-        "top_percent": top_percent,
-    }
+def fetch_matrix(scope_params: dict, top_percent: str):
+    params = {"metagame_id": "4", "date_range": "all", "top_percent": top_percent, **scope_params}
     resp = requests.get(f"{BASE}/stats/winrate", headers=HEADERS, params=params, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
@@ -90,15 +101,16 @@ def fetch_matrix(minimum_players: str, top_percent: str):
 def main():
     all_matrices = {}
     legend_order = None
-    for scenario_key, params in SCENARIOS.items():
-        print(f"Fetching matchup matrix for scenario '{scenario_key}' "
-              f"(minimum_players={params['minimum_players']}, top_percent={params['top_percent'] or 'any'})...",
-              file=sys.stderr)
-        cols, matrix = fetch_matrix(params["minimum_players"], params["top_percent"])
-        all_matrices[scenario_key] = matrix
-        if legend_order is None or len(cols) > len(legend_order):
-            legend_order = cols
-        print(f"  {len(matrix)} pilots parsed", file=sys.stderr)
+    for scope_key, scope_params in SCOPES.items():
+        for tier_key, top_percent in TIERS.items():
+            scenario_key = f"{scope_key}_{tier_key}"
+            print(f"Fetching matchup matrix for '{scenario_key}' ({scope_params}, top_percent={top_percent or 'any'})...",
+                  file=sys.stderr)
+            cols, matrix = fetch_matrix(scope_params, top_percent)
+            all_matrices[scenario_key] = matrix
+            if legend_order is None or len(cols) > len(legend_order):
+                legend_order = cols
+            print(f"  {len(matrix)} pilots parsed", file=sys.stderr)
 
     matchups_path = OUT_DIR / "matchups.json"
     matchups_path.write_text(json.dumps(all_matrices, indent=2, ensure_ascii=False), encoding="utf-8")
