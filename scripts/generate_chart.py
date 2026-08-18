@@ -23,23 +23,9 @@ DIR = Path(__file__).parent
 
 legends_raw = json.loads((DIR / "vendetta_legends.json").read_text(encoding="utf-8"))
 breakdown = json.loads((DIR / "tournament_breakdown_legends.json").read_text(encoding="utf-8"))
-breakdown_raw = json.loads((DIR / "tournament_breakdown_raw.json").read_text(encoding="utf-8"))
 tournaments = json.loads((DIR / "tournaments_200plus.json").read_text(encoding="utf-8"))
 matchups = json.loads((DIR / "matchups.json").read_text(encoding="utf-8"))
 legend_order = json.loads((DIR / "legends_order.json").read_text(encoding="utf-8"))
-
-# 512+-player subset (Germany-Speyer + Ottawa) -- the population backing the
-# "barcelona" and "nexusnight" proxy scenarios (see scrape_matchups.py).
-SLUGS_512 = [
-    "riftbound-showdown-series-germany-speyer-tournament-decks-13992",
-    "riftbound-showdown-ottawa-tournament-decks-13733",
-]
-times_played_512 = {}
-for slug in SLUGS_512:
-    for name, n in breakdown_raw.get(slug, {}).items():
-        times_played_512[name] = times_played_512.get(name, 0) + n
-total_decks_512 = sum(times_played_512.values())
-mirror_share_512 = {name: n / total_decks_512 for name, n in times_played_512.items()}
 
 # vendetta_legends.json's "times_played" comes from riftDecks' sitewide /legends
 # page, which has NO minimum_players filter -- it silently covers the whole
@@ -206,18 +192,22 @@ html = f"""<meta charset="utf-8">
     --chip-bg: #24231f;
   }}
 
-  .viz-root {{ padding: 28px 20px 40px; max-width: 900px; margin: 0 auto; }}
+  .viz-root {{ padding: 32px 20px 48px; max-width: 900px; margin: 0 auto; }}
   .viz-root * {{ box-sizing: border-box; }}
-  .viz-h1 {{ font-size: 22px; font-weight: 650; margin: 0 0 4px; }}
-  .viz-sub {{ font-size: 13.5px; color: var(--text-secondary); margin: 0 0 20px; line-height: 1.5; max-width: 68ch; }}
+  .viz-root ::selection {{ background: color-mix(in oklab, var(--div-blue) 35%, transparent); }}
+  .viz-h1 {{ font-size: 24px; font-weight: 700; margin: 0 0 4px; letter-spacing: -.01em; }}
+  .viz-kicker {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .08em; color: var(--div-blue); margin-bottom: 8px; }}
+  .viz-kicker::before {{ content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--div-blue); }}
+  .viz-sub {{ font-size: 13.5px; color: var(--text-secondary); margin: 0 0 20px; line-height: 1.55; max-width: 68ch; }}
 
-  .stat-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }}
-  .stat-tile {{ background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }}
-  .stat-tile .label {{ font-size: 11.5px; color: var(--text-muted); }}
-  .stat-tile .value {{ font-size: 20px; font-weight: 650; margin-top: 2px; }}
+  .stat-row {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px; }}
+  .stat-tile {{ background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; transition: border-color .15s ease, transform .15s ease; }}
+  .stat-tile:hover {{ border-color: color-mix(in oklab, var(--div-blue) 40%, var(--border)); transform: translateY(-1px); }}
+  .stat-tile .label {{ font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }}
+  .stat-tile .value {{ font-size: 21px; font-weight: 700; margin-top: 3px; letter-spacing: -.01em; }}
 
-  .card {{ background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px 20px; margin-bottom: 18px; }}
-  .card h2 {{ font-size: 14px; font-weight: 650; margin: 0 0 10px; color: var(--text-primary); }}
+  .card {{ background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px 22px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(11,11,11,.04), 0 8px 24px -16px rgba(11,11,11,.12); }}
+  .card h2 {{ font-size: 15px; font-weight: 700; margin: 0 0 10px; color: var(--text-primary); letter-spacing: -.005em; }}
 
   table.tourney {{ width: 100%; border-collapse: collapse; font-size: 13px; }}
   table.tourney th {{ text-align: left; color: var(--text-muted); font-weight: 550; font-size: 11.5px; text-transform: uppercase; letter-spacing: .02em; padding: 6px 8px; border-bottom: 1px solid var(--gridline); }}
@@ -228,14 +218,17 @@ html = f"""<meta charset="utf-8">
   .legend-scale {{ display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--text-muted); margin: 2px 0 16px; }}
   .legend-scale .bar {{ flex: 1; height: 10px; border-radius: 5px; background: linear-gradient(to right, var(--div-red), var(--div-mid), var(--div-blue)); }}
 
-  .toggle-row {{ display: flex; gap: 6px; margin-bottom: 14px; }}
-  .toggle-btn {{ font: inherit; font-size: 12.5px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); cursor: pointer; }}
+  .toggle-row {{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }}
+  .toggle-btn {{ font: inherit; font-size: 12.5px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary); cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease; }}
+  .toggle-btn:hover:not(.active) {{ background: var(--chip-bg); border-color: color-mix(in oklab, var(--div-blue) 30%, var(--border)); }}
   .toggle-btn.active {{ background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }}
+  .toggle-btn:focus-visible, .picker-btn:focus-visible {{ outline: 2px solid var(--div-blue); outline-offset: 2px; }}
 
-  .bar-row {{ display: grid; grid-template-columns: 168px 1fr 92px; align-items: center; gap: 10px; height: 20px; margin-bottom: 2px; position: relative; }}
+  .bar-row {{ display: grid; grid-template-columns: 168px 1fr 92px; align-items: center; gap: 10px; height: 20px; margin-bottom: 3px; position: relative; }}
   .bar-row .name {{ font-size: 12px; color: var(--text-secondary); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
   .bar-row .track {{ position: relative; height: 14px; background: var(--gridline); border-radius: 4px; overflow: hidden; }}
-  .bar-row .fill {{ position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px 0 0 4px; cursor: pointer; }}
+  .bar-row .fill {{ position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px 0 0 4px; cursor: pointer; transition: filter .15s ease; }}
+  .bar-row .fill:hover {{ filter: brightness(1.08); }}
   .bar-row .fill.insufficient {{ background: repeating-linear-gradient(45deg, var(--text-muted) 0 3px, transparent 3px 7px); opacity: .55; }}
   .bar-row .tail {{ font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }}
 
@@ -246,26 +239,35 @@ html = f"""<meta charset="utf-8">
   table.datatable.active {{ display: table; }}
   #chartView.active {{ display: block; }}
   #chartView {{ display: none; }}
-  table.datatable th {{ text-align: right; color: var(--text-muted); font-weight: 550; font-size: 11.5px; text-transform: uppercase; letter-spacing: .02em; padding: 8px; border-bottom: 1px solid var(--gridline); cursor: pointer; user-select: none; }}
+  table.datatable th {{ text-align: right; color: var(--text-muted); font-weight: 550; font-size: 11.5px; text-transform: uppercase; letter-spacing: .02em; padding: 8px; border-bottom: 1px solid var(--gridline); cursor: pointer; user-select: none; transition: color .15s ease; }}
+  table.datatable th:hover {{ color: var(--text-primary); }}
   table.datatable th:first-child {{ text-align: left; }}
   table.datatable td {{ padding: 7px 8px; border-bottom: 1px solid var(--gridline); text-align: right; font-variant-numeric: tabular-nums; color: var(--text-secondary); }}
   table.datatable td:first-child {{ text-align: left; color: var(--text-primary); font-variant-numeric: normal; }}
   table.datatable th.sorted::after {{ content: " \\2193"; }}
   table.datatable th.sorted.asc::after {{ content: " \\2191"; }}
+  table.datatable tbody tr {{ transition: background .1s ease; }}
+  table.datatable tbody tr:hover {{ background: var(--chip-bg); }}
+  table.tourney tbody tr {{ transition: background .1s ease; }}
+  table.tourney tbody tr:hover {{ background: var(--chip-bg); }}
+  table.freqtable tbody tr {{ transition: background .1s ease; }}
+  table.freqtable tbody tr:hover {{ background: var(--chip-bg); }}
 
   .foot {{ font-size: 11.5px; color: var(--text-muted); margin-top: 8px; line-height: 1.6; }}
   .foot a {{ color: inherit; }}
 
   .picker {{ display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; max-height: 148px; overflow-y: auto; padding: 2px; }}
-  .picker-btn {{ font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text-secondary); cursor: pointer; white-space: nowrap; }}
+  .picker-btn {{ font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text-secondary); cursor: pointer; white-space: nowrap; transition: background .15s ease, color .15s ease, border-color .15s ease; }}
+  .picker-btn:hover:not(.active) {{ background: color-mix(in oklab, var(--div-blue) 12%, var(--chip-bg)); border-color: color-mix(in oklab, var(--div-blue) 30%, var(--border)); }}
   .picker-btn.active {{ background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); font-weight: 600; }}
 
   .rosco-wrap {{ display: flex; flex-direction: column; align-items: center; }}
-  .rosco-wrap svg {{ width: 100%; max-width: 640px; height: auto; }}
-  .rosco-node circle {{ cursor: pointer; }}
+  .rosco-wrap svg {{ width: 100%; max-width: 760px; height: auto; }}
+  .rosco-node circle {{ cursor: pointer; transition: filter .12s ease; stroke: var(--surface-1); stroke-width: 2; }}
+  .rosco-node:hover circle {{ filter: brightness(1.12); }}
   .rosco-node.insufficient circle {{ fill: var(--gridline) !important; stroke: var(--baseline); stroke-dasharray: 2 2; }}
   .rosco-node text {{ fill: var(--surface-1); font-weight: 650; pointer-events: none; }}
-  .rosco-node .opp-name {{ fill: var(--text-secondary); font-weight: 550; }}
+  .rosco-node .opp-name {{ fill: var(--text-secondary); font-weight: 600; }}
   .rosco-node.insufficient text.opp-name {{ fill: var(--text-muted); }}
   .rosco-node.insufficient text.wr-label {{ fill: var(--text-muted); }}
   .rosco-center circle {{ fill: var(--text-primary); }}
@@ -296,7 +298,8 @@ html = f"""<meta charset="utf-8">
 </style>
 
 <div class="viz-root">
-  <div class="viz-h1">Riftbound: Vendetta — leyendas en torneos grandes</div>
+  <div class="viz-kicker">Riftbound · Vendetta</div>
+  <div class="viz-h1">Leyendas en torneos grandes</div>
   <p class="viz-sub">
     Metagame Vendetta (desde el lanzamiento de la expansión, 2026-07-31), restringido a torneos con
     más de 200 jugadores registrados. El filtro disponible más cercano en la fuente son eventos de
@@ -460,15 +463,9 @@ html = f"""<meta charset="utf-8">
     <p class="viz-sub" style="margin-bottom:14px;">
       Elige una leyenda para ver su "rosco" de matchups: cada nodo alrededor es un rival, coloreado
       por win rate (mismo azul/rojo divergente centrado en 50%). La fuente no ofrece un corte exacto
-      "Top 64" / "Top 8" — solo porcentajes relativos al tamaño de cada torneo.
+      "Top 64" / "Top 8" — solo porcentajes relativos al tamaño de cada torneo, así que usamos Top 25%
+      y Top 10% de cada evento como la aproximación más cercana disponible.
     </p>
-
-    <div class="toggle-row" id="scenarioToggle">
-      <button class="toggle-btn active" data-scenario="general">General (4 torneos 200+)</button>
-      <button class="toggle-btn" data-scenario="nexusnight">Super Nexus Night (Bo1, ~500p)</button>
-    </div>
-
-    <div class="foot" id="scenarioCaveat" style="margin-bottom:14px;"></div>
 
     <div class="toggle-row" id="tierToggle">
       <button class="toggle-btn active" data-tier="any">Todos los jugadores</button>
@@ -487,7 +484,7 @@ html = f"""<meta charset="utf-8">
     </div>
 
     <div class="rosco-wrap">
-      <svg id="roscoSvg" viewBox="0 0 700 700"></svg>
+      <svg id="roscoSvg" viewBox="0 0 1300 1300"></svg>
     </div>
 
     <div class="foot" id="roscoFoot"></div>
@@ -586,48 +583,37 @@ html = f"""<meta charset="utf-8">
   const matchups = {json.dumps(matchups, ensure_ascii=False)};
   const legendOrder = {json.dumps(legend_order, ensure_ascii=False)};
   const pickerLegends = {json.dumps(picker_legends, ensure_ascii=False)};
+  const mirrorShare = {json.dumps(mirror_share, ensure_ascii=False)};
+  const timesPlayedByLegend = {json.dumps({l["legend"]: l["times_played"] for l in legends}, ensure_ascii=False)};
+  const totalDecksAll = {total_decks};
 
-  // Two population scopes back the mirror-match estimate: "general" (all 4
-  // tournaments, 256+) and "512" (just Germany-Speyer + Ottawa, the population
-  // behind the barcelona/nexusnight proxy scenarios).
-  const scopes = {{
-    general: {{
-      mirrorShare: {json.dumps(mirror_share, ensure_ascii=False)},
-      timesPlayed: {json.dumps({l["legend"]: l["times_played"] for l in legends}, ensure_ascii=False)},
-      totalDecks: {total_decks},
-    }},
-    p512: {{
-      mirrorShare: {json.dumps(mirror_share_512, ensure_ascii=False)},
-      timesPlayed: {json.dumps(times_played_512, ensure_ascii=False)},
-      totalDecks: {total_decks_512},
-    }},
+  // Plain first-name is ambiguous when two legends share it (e.g. the two
+  // Master Yi variants) -- disambiguate only those with their epithet.
+  const shortNameBase = n => n.split(',')[0].trim();
+  const shortNameCounts = {{}};
+  legendOrder.forEach(n => {{
+    const b = shortNameBase(n);
+    shortNameCounts[b] = (shortNameCounts[b] || 0) + 1;
+  }});
+  const shortName = n => {{
+    const base = shortNameBase(n);
+    if (shortNameCounts[base] > 1) {{
+      const epithet = n.split(',').slice(1).join(',').trim();
+      return base + ' (' + epithet + ')';
+    }}
+    return base;
   }};
 
-  const SCENARIO_CAVEATS = {{
-    general: 'Datos reales de los 4 torneos Vendetta con 200+ jugadores (sin aproximaciones).',
-    nexusnight: '⚠ No hay ningún Super Nexus Night dentro de la metagame Vendetta en riftDecks todavía. Esto reutiliza los mismos torneos ' +
-      'grandes disponibles (Alemania + Ottawa, 512+ jugadores) pero sin corte por posición, ya que Nexus Night es una única fase suiza sin ' +
-      'eliminatoria. Esos torneos se juegan a Bo3 y Nexus Night es Bo1 — el reparto de qué leyendas te vas a encontrar es un proxy razonable, ' +
-      'pero los win rates no son directamente extrapolables a Bo1 (más varianza, penaliza menos a los mazos lentos/de control).',
-  }};
-
-  const shortName = n => n.split(',')[0].trim();
   const picker = document.getElementById('legendPicker');
   const svg = document.getElementById('roscoSvg');
   const roscoFoot = document.getElementById('roscoFoot');
   const tierToggle = document.getElementById('tierToggle');
-  const scenarioToggle = document.getElementById('scenarioToggle');
-  const scenarioCaveat = document.getElementById('scenarioCaveat');
 
-  let scenarioFamily = 'general'; // 'general' | 'nexusnight'
-  let generalTier = 'any';        // only meaningful within scenarioFamily === 'general'
+  let currentTier = 'any';
   let currentPilot = pickerLegends[0];
 
   function currentScenarioKey() {{
-    return scenarioFamily === 'general' ? ('general_' + generalTier) : scenarioFamily;
-  }}
-  function currentScope() {{
-    return scenarioFamily === 'general' ? scopes.general : scopes.p512;
+    return 'general_' + currentTier;
   }}
 
   picker.innerHTML = pickerLegends.map(n =>
@@ -646,7 +632,11 @@ html = f"""<meta charset="utf-8">
     const opponents = legendOrder.filter(n => n !== currentPilot);
     const tierData = (matchups[currentScenarioKey()] || {{}})[currentPilot] || {{}};
     const N = opponents.length;
-    const cx = 350, cy = 350, ringR = 300, nodeR = 27, centerR = 55;
+    // ringR sized so adjacent node circles never touch even at N=36-ish:
+    // circumference / N must clear nodeR*2 + a gap. cx/cy leave enough margin
+    // for the longest disambiguated label ("Master Yi (Wuju Bladesman)") to
+    // fit past labelR without clipping the SVG viewBox on any side.
+    const cx = 650, cy = 650, ringR = 380, nodeR = 23, centerR = 60, labelR = ringR + nodeR + 16;
 
     let svgHtml = '';
     // spokes first (so nodes render on top)
@@ -669,11 +659,18 @@ html = f"""<meta charset="utf-8">
       const insufficient = !d || d.matches === undefined || d.matches === null;
       const fill = insufficient ? '' : ('style="fill:' + wrColor(d.win_rate) + '"');
       const wrLabel = insufficient ? 'S/D' : (d.win_rate + '%');
-      const labelY = y - nodeR - 14;
+      // Label sits further out along the SAME radius as the node (not just
+      // "above" it) so it doesn't drift into neighboring nodes at the sides
+      // of the circle -- the old fixed vertical offset only worked near the
+      // top and broke down at 3/9 o'clock, which is what caused the overlap.
+      const lx = cx + labelR * Math.cos(angle);
+      const ly = cy + labelR * Math.sin(angle);
+      const cosA = Math.cos(angle);
+      const anchor = cosA > 0.15 ? 'start' : (cosA < -0.15 ? 'end' : 'middle');
       svgHtml += '<g class="rosco-node' + (insufficient ? ' insufficient' : '') + '" data-opp="' + opp.replace(/"/g, '&quot;') + '">' +
         '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + nodeR + '" ' + fill + '></circle>' +
-        '<text class="wr-label" x="' + x.toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="middle" font-size="12">' + wrLabel + '</text>' +
-        '<text class="opp-name" x="' + x.toFixed(1) + '" y="' + labelY.toFixed(1) + '" text-anchor="middle" font-size="9.5">' + shortName(opp) + '</text>' +
+        '<text class="wr-label" x="' + x.toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="middle" font-size="11.5">' + wrLabel + '</text>' +
+        '<text class="opp-name" x="' + lx.toFixed(1) + '" y="' + (ly + 3.5).toFixed(1) + '" text-anchor="' + anchor + '" font-size="12">' + shortName(opp) + '</text>' +
         '</g>';
     }});
 
@@ -718,8 +715,7 @@ html = f"""<meta charset="utf-8">
     const opponents = legendOrder.filter(n => n !== currentPilot);
     const tierData = (matchups[currentScenarioKey()] || {{}})[currentPilot] || {{}};
     const total = opponents.reduce((s, o) => s + (tierData[o] ? tierData[o].matches : 0), 0);
-    const scope = currentScope();
-    const mShare = scope.mirrorShare[currentPilot] || 0;
+    const mShare = mirrorShare[currentPilot] || 0;
 
     // Non-mirror opponents: Wilson CI on the conditional share (given it's not a
     // mirror), then rescaled by (1 - mShare) so every row -- mirror included --
@@ -739,8 +735,8 @@ html = f"""<meta charset="utf-8">
 
     const rows = [...oppRows];
     if (mShare > 0) {{
-      const kMirror = scope.timesPlayed[currentPilot] || 0;
-      const wMirror = wilson(kMirror, scope.totalDecks);
+      const kMirror = timesPlayedByLegend[currentPilot] || 0;
+      const wMirror = wilson(kMirror, totalDecksAll);
       rows.push({{
         label: shortName(currentPilot) + ' (espejo)', n: kMirror, isMirror: true,
         p: wMirror.p, lo: wMirror.lo, hi: wMirror.hi,
@@ -793,23 +789,11 @@ html = f"""<meta charset="utf-8">
   tierToggle.addEventListener('click', e => {{
     const btn = e.target.closest('.toggle-btn');
     if (!btn) return;
-    generalTier = btn.dataset.tier;
+    currentTier = btn.dataset.tier;
     tierToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
     renderRosco();
     renderFreqList();
   }});
-
-  scenarioToggle.addEventListener('click', e => {{
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-    scenarioFamily = btn.dataset.scenario;
-    scenarioToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
-    tierToggle.style.display = scenarioFamily === 'general' ? '' : 'none';
-    scenarioCaveat.textContent = SCENARIO_CAVEATS[scenarioFamily];
-    renderRosco();
-    renderFreqList();
-  }});
-  scenarioCaveat.textContent = SCENARIO_CAVEATS[scenarioFamily];
 
   renderRosco();
   renderFreqList();

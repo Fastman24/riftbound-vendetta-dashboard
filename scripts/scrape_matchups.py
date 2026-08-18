@@ -1,32 +1,22 @@
 """
 Scrapes the full legend-vs-legend matchup matrix (win rate + matches per pair)
-from riftDecks.com's Winrate Matrix page, for several named "scenarios" -- each
-a (minimum_players, top_percent) pair the site actually supports:
+from riftDecks.com's Winrate Matrix page, for the 4 tournaments covered by
+scrape_tournament_breakdowns.py (minimum_players=256, the closest bucket to
+"more than 200 players"), across three player-slice tiers the site offers:
 
-  - general_any / general_top25 / general_top10:
-      minimum_players=256 (closest bucket to "more than 200 players"), across
-      Any / Top 25% / Top 10% of finishers per tournament. This is the 4
-      tournaments covered by scrape_tournament_breakdowns.py.
+  - general_any:   top_percent="" (every player)
+  - general_top25: top_percent="25"
+  - general_top10: top_percent="10"
 
-  - barcelona: minimum_players=512, top_percent=10 -- a PROXY for the
-      Barcelona Regional Qualifier (2,210 players, cuts to Top 64 on day 2),
-      which hasn't happened yet as of this scrape and so has no real data of
-      its own. 512+ is the largest bucket we have actual matches for (only
-      Germany-Speyer 626p and Ottawa 594p qualify), and top_percent=10 is
-      used as the closest available stand-in for "the players who are
-      actually competing for the cut" -- NOT a real Barcelona top-64 cut.
+riftDecks does not expose an absolute "Top 64" / "Top 8" cut, only percentages
+relative to each tournament's own size, so top_percent=10/25 are the closest
+available approximation, flagged as such in the dashboard UI.
 
-  - nexusnight: minimum_players=512, top_percent="" (any) -- a PROXY for a
-      ~500-player "Super Nexus Night" in the Vendetta metagame. No such event
-      exists yet in riftDecks' Vendetta data (the one found, Lille, was
-      pre-Vendetta and a different metagame), so this reuses the same 512+
-      bucket (Germany-Speyer + Ottawa) but on the full field (no cut), since
-      Nexus Night is a single Bo1 Swiss night with no elimination top cut.
-
-riftDecks does not expose an absolute "Top 64" / "Top 8" cut (only percentages
-relative to each tournament's own size), and it has no data at all for a
-2,210-player or ~500-player Vendetta event -- both approximations above are
-flagged clearly in the dashboard UI, not presented as real results.
+(An earlier version of this script also scraped "barcelona" and "nexusnight"
+proxy scenarios at minimum_players=512, reusing these same 2 tournaments as a
+stand-in for events that don't have real Vendetta data yet. Those were
+replaced by a proper statistical projection -- see generate_chart.py's
+Barcelona section -- and dropped here as they added no real signal.)
 
 Writes matchups.json: { scenario_key: { pilot_legend: { opponent_legend: {win_rate, matches} } } }
 and legends_order.json: [legend names in the matrix's row/column order]
@@ -52,8 +42,6 @@ SCENARIOS = {
     "general_any": {"minimum_players": "256", "top_percent": ""},
     "general_top25": {"minimum_players": "256", "top_percent": "25"},
     "general_top10": {"minimum_players": "256", "top_percent": "10"},
-    "barcelona": {"minimum_players": "512", "top_percent": "10"},
-    "nexusnight": {"minimum_players": "512", "top_percent": ""},
 }
 
 
