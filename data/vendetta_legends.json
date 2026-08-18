@@ -1,0 +1,290 @@
+[
+  {
+    "legend": "Kennen, Heart of the Tempest",
+    "times_played": 485,
+    "total_games": 1049,
+    "win_rate_pct": 59.2
+  },
+  {
+    "legend": "Master Yi, Wuju Bladesman",
+    "times_played": 455,
+    "total_games": 396,
+    "win_rate_pct": 57.6
+  },
+  {
+    "legend": "Irelia, Blade Dancer",
+    "times_played": 404,
+    "total_games": 736,
+    "win_rate_pct": 55.4
+  },
+  {
+    "legend": "Kai'sa, Daughter of the Void",
+    "times_played": 292,
+    "total_games": 94,
+    "win_rate_pct": 44.7
+  },
+  {
+    "legend": "Diana, Scorn of the Moon",
+    "times_played": 240,
+    "total_games": 430,
+    "win_rate_pct": 54.0
+  },
+  {
+    "legend": "Nasus, Curator of the Sands",
+    "times_played": 233,
+    "total_games": 439,
+    "win_rate_pct": 47.4
+  },
+  {
+    "legend": "Reksai, Void Burrower",
+    "times_played": 215,
+    "total_games": 489,
+    "win_rate_pct": 57.3
+  },
+  {
+    "legend": "Akali, Rogue Assassin",
+    "times_played": 208,
+    "total_games": 409,
+    "win_rate_pct": 41.1
+  },
+  {
+    "legend": "Draven, Glorious Executioner",
+    "times_played": 196,
+    "total_games": 510,
+    "win_rate_pct": 54.5
+  },
+  {
+    "legend": "Jayce, Defender of Tomorrow",
+    "times_played": 184,
+    "total_games": 326,
+    "win_rate_pct": 51.2
+  },
+  {
+    "legend": "Azir, Emperor of the Sands",
+    "times_played": 173,
+    "total_games": 542,
+    "win_rate_pct": 54.2
+  },
+  {
+    "legend": "Rengar, Pridestalker",
+    "times_played": 154,
+    "total_games": 500,
+    "win_rate_pct": 59.0
+  },
+  {
+    "legend": "Mel, Soul's Reflection",
+    "times_played": 147,
+    "total_games": 305,
+    "win_rate_pct": 43.0
+  },
+  {
+    "legend": "Ezreal, Prodigal Explorer",
+    "times_played": 139,
+    "total_games": 358,
+    "win_rate_pct": 53.1
+  },
+  {
+    "legend": "Viktor, Herald of the Arcane",
+    "times_played": 136,
+    "total_games": 117,
+    "win_rate_pct": 41.9
+  },
+  {
+    "legend": "Lillia, Bashful Bloom",
+    "times_played": 133,
+    "total_games": 427,
+    "win_rate_pct": 47.5
+  },
+  {
+    "legend": "Fiora, Grand Duelist",
+    "times_played": 132,
+    "total_games": 277,
+    "win_rate_pct": 48.4
+  },
+  {
+    "legend": "Leblanc, Deceiver",
+    "times_played": 121,
+    "total_games": 314,
+    "win_rate_pct": 54.8
+  },
+  {
+    "legend": "Vex, Gloomist",
+    "times_played": 110,
+    "total_games": 337,
+    "win_rate_pct": 45.7
+  },
+  {
+    "legend": "Khazix, Voidreaver",
+    "times_played": 104,
+    "total_games": 371,
+    "win_rate_pct": 53.4
+  },
+  {
+    "legend": "Ornn, Fire Below the Mountain",
+    "times_played": 98,
+    "total_games": 349,
+    "win_rate_pct": 46.4
+  },
+  {
+    "legend": "Ambessa, Matriarch of War",
+    "times_played": 87,
+    "total_games": 224,
+    "win_rate_pct": 42.0
+  },
+  {
+    "legend": "Zed, Master of Shadows",
+    "times_played": 69,
+    "total_games": 190,
+    "win_rate_pct": 41.6
+  },
+  {
+    "legend": "Pyke, Bloodharbor Ripper",
+    "times_played": 66,
+    "total_games": 217,
+    "win_rate_pct": 41.0
+  },
+  {
+    "legend": "Shen, Eye of Twilight",
+    "times_played": 51,
+    "total_games": 141,
+    "win_rate_pct": 41.1
+  },
+  {
+    "legend": "Ivern, Green Father",
+    "times_played": 44,
+    "total_games": 190,
+    "win_rate_pct": 35.8
+  },
+  {
+    "legend": "Sivir, Battle Mistress",
+    "times_played": 40,
+    "total_games": 84,
+    "win_rate_pct": 50.0
+  },
+  {
+    "legend": "Annie, Dark Child",
+    "times_played": 38,
+    "total_games": 100,
+    "win_rate_pct": 48.0
+  },
+  {
+    "legend": "Rumble, Mechanized Menace",
+    "times_played": 38,
+    "total_games": 170,
+    "win_rate_pct": 42.4
+  },
+  {
+    "legend": "Jhin, Virtuoso",
+    "times_played": 37,
+    "total_games": 189,
+    "win_rate_pct": 38.6
+  },
+  {
+    "legend": "Lucian, Purifier",
+    "times_played": 34,
+    "total_games": 154,
+    "win_rate_pct": 46.1
+  },
+  {
+    "legend": "Jax, Grandmaster at Arms",
+    "times_played": 33,
+    "total_games": 164,
+    "win_rate_pct": 47.6
+  },
+  {
+    "legend": "Lux, Lady of Luminosity",
+    "times_played": 32,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Master Yi, Wuju Master",
+    "times_played": 31,
+    "total_games": 123,
+    "win_rate_pct": 41.5
+  },
+  {
+    "legend": "Vi, Piltover Enforcer",
+    "times_played": 31,
+    "total_games": 169,
+    "win_rate_pct": 42.0
+  },
+  {
+    "legend": "Renekton, Butcher of the Sands",
+    "times_played": 28,
+    "total_games": 131,
+    "win_rate_pct": 42.7
+  },
+  {
+    "legend": "Renata Glasc, Chem-Baroness",
+    "times_played": 23,
+    "total_games": 159,
+    "win_rate_pct": 30.8
+  },
+  {
+    "legend": "Sett, The Boss",
+    "times_played": 21,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Poppy, Keeper of the Hammer",
+    "times_played": 16,
+    "total_games": 129,
+    "win_rate_pct": 40.3
+  },
+  {
+    "legend": "Leona, Radiant Dawn",
+    "times_played": 14,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Miss Fortune, Bounty Hunter",
+    "times_played": 13,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Yasuo, Unforgiven",
+    "times_played": 12,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Teemo, Swift Scout",
+    "times_played": 10,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Volibear, Relentless Storm",
+    "times_played": 10,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Jinx, Loose Cannon",
+    "times_played": 7,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Ahri, Nine-Tailed Fox",
+    "times_played": 6,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Lee Sin, Blind Monk",
+    "times_played": 4,
+    "total_games": null,
+    "win_rate_pct": null
+  },
+  {
+    "legend": "Darius, Hand of Noxus",
+    "times_played": 2,
+    "total_games": null,
+    "win_rate_pct": null
+  }
+]
